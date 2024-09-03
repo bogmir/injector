@@ -8,6 +8,7 @@ defmodule Injector do
 
   defmacro inject(module, opts \\ []) do
     as = Keyword.get(opts, :as, module)
+    as = simplify_alias(as)
 
     quote do
       Injector.__inject__(__MODULE__, {unquote(module), unquote(as)})
@@ -35,4 +36,18 @@ defmodule Injector do
       (unquote_splicing(aliases))
     end
   end
+
+  defp simplify_alias(alias) when is_atom(alias) do
+    alias
+    |> Atom.to_string()
+    |> String.split(".")
+    |> List.last()
+    |> String.to_atom()
+  end
+
+  defp simplify_alias({:__aliases__, meta, parts}) do
+    {:__aliases__, meta, [List.last(parts)]}
+  end
+
+  defp simplify_alias(other), do: other
 end
