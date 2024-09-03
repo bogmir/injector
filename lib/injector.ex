@@ -2,7 +2,6 @@ defmodule Injector do
   defmacro __using__(_opts) do
     quote do
       import Injector
-      @injections []
       @before_compile Injector
     end
   end
@@ -11,12 +10,17 @@ defmodule Injector do
     as = Keyword.get(opts, :as, module)
 
     quote do
-      @injections @injections ++ [{unquote(module), unquote(as)}]
+      Injector.__inject__(__MODULE__, {unquote(module), unquote(as)})
     end
   end
 
+  def __inject__(module, injection) do
+    injections = Module.get_attribute(module, :injector_injections) || []
+    Module.put_attribute(module, :injector_injections, [injection | injections])
+  end
+
   defmacro __before_compile__(env) do
-    injections = Module.get_attribute(env.module, :injections) || []
+    injections = Module.get_attribute(env.module, :injector_injections) || []
 
     aliases =
       for {module, as} <- injections do
