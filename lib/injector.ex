@@ -2,6 +2,7 @@ defmodule Injector do
   defmacro __using__(_opts) do
     quote do
       import Injector
+      @injections []
       @before_compile Injector
     end
   end
@@ -10,7 +11,7 @@ defmodule Injector do
     as = Keyword.get(opts, :as, module)
 
     quote do
-      @injections {unquote(module), unquote(as)}
+      @injections @injections ++ [{unquote(module), unquote(as)}]
     end
   end
 
