@@ -9,9 +9,10 @@ defmodule Injector do
   defmacro inject(module, opts \\ []) do
     as = Keyword.get(opts, :as, module)
     as = simplify_alias(as)
+    mock = Keyword.get(opts, :mock)
 
     quote do
-      Injector.__inject__(__MODULE__, {unquote(module), unquote(as)})
+      Injector.__inject__(__MODULE__, {unquote(module), unquote(as), unquote(mock)})
     end
   end
 
@@ -24,11 +25,19 @@ defmodule Injector do
     injections = Module.get_attribute(env.module, :injector_injections) || []
 
     aliases =
-      for {module, as} <- injections do
-        injection = Application.get_env(:injector, module, module)
+      for {module, as, mock} <- injections do
+        cond do
+          Mix.env() == :test and not is_nil(mock) ->
+            quote do
+              alias unquote(mock), as: unquote(as)
+            end
 
-        quote do
-          alias unquote(injection), as: unquote(as)
+          true ->
+            injection = Application.get_env(:injector, module, module)
+
+            quote do
+              alias unquote(injection), as: unquote(as)
+            end
         end
       end
 
