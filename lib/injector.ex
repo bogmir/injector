@@ -8,10 +8,9 @@ defmodule Injector do
 
   defmacro inject(module, opts \\ []) do
     as = Keyword.get(opts, :as, module)
-    injection = Application.get_env(:injector, module, module)
 
     quote do
-      @injections {unquote(injection), unquote(as)}
+      @injections {unquote(module), unquote(as)}
     end
   end
 
@@ -19,7 +18,9 @@ defmodule Injector do
     injections = Module.get_attribute(env.module, :injections) || []
 
     aliases =
-      for {injection, as} <- injections do
+      for {module, as} <- injections do
+        injection = Application.get_env(:injector, module, module)
+
         quote do
           alias unquote(injection), as: unquote(as)
         end
